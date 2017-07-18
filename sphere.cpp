@@ -225,11 +225,6 @@ Point3D vertex[nVertices];
 Color colors[nVertices];
 int INDEX = 0;
 GLint transMatrix;
-GLint matrixX;
-GLint matrixY;
-GLint matrixZ;
-GLint matrixPos;
-GLint matrixSize;
 
 
 // Encontrar el punto medio entre dos puntos a y b
@@ -557,17 +552,8 @@ void init(void)
 
     // Tranformaciones
     transMatrix = glGetUniformLocation(program, "trans");
-    /* matrixX = glGetUniformLocation(program, "x"); */
-    /* matrixY = glGetUniformLocation(program, "y"); */
-    /* matrixZ = glGetUniformLocation(program, "z"); */
-    /* matrixPos = glGetUniformLocation(program, "pos"); */
-    /* matrixSize = glGetUniformLocation(program, "size"); */
 
     glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
-    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
-    /*         Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20) */
-    /*         * Matrix::scaleMatrix(0.5, 0.5, 0.5) */
-    /*         * Matrix::shiftMatrix(1.5, 0, 0)); */
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
