@@ -1,6 +1,6 @@
 #version 130
 
-varying  vec4 color;
+in vec4 color;
 
 void
 main()

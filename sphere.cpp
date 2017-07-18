@@ -10,13 +10,19 @@ using namespace std;
 struct Color
 {
     float r, g, b;
-};
 
-// Paleta de colores
-const Color GREEN_LIGHT = {0.0, 1.0, 0.0};
-const Color GREEN_DIM = {0.0, 0.6, 0.0};
-const Color GREEN_DARK = {0.0, 0.3, 0.0};
-const Color BLACK = {0.0, 0.0, 0.0};
+    Color darken()
+    {
+        Color newColor = {r, g, b};
+        float newR = r - 0.2;
+        float newG = g - 0.2;
+        float newB = b - 0.2;
+        if (newR >= 0) { newColor.r = newR; }
+        if (newG >= 0) { newColor.g = newG; }
+        if (newB >= 0) { newColor.b = newB; }
+        return newColor;
+    }
+};
 
 // Estructura y función auxiliar para la lectura, carga y compilación de shaders
 typedef struct
@@ -35,7 +41,22 @@ struct Point2D
 
 struct Point3D
 {
-    GLfloat  x, y, z;
+    GLfloat  x, y, z, w;
+
+    static Point3D zero()
+    {
+        return {0, 0, 0, 1};
+    }
+
+    GLfloat &operator [](int i)
+    {
+        return *(&x + i);
+    }
+
+    const GLfloat operator [](int i) const
+    {
+        return *(&x + i);
+    }
 };
 
 struct PointSpherical
@@ -43,8 +64,61 @@ struct PointSpherical
     GLfloat r, a, p;
 };
 
-Point3D vertex[100000];
-Color colors[100000];
+struct Matrix
+{
+    Point3D matrix[4] = {0, 0, 0, 0};
+
+    // Identity Matrix
+    Matrix()
+    {
+        matrix[0] = {1, 0, 0, 0};
+        matrix[1] = {0, 1, 0, 0};
+        matrix[2] = {0, 0, 1, 0};
+        matrix[3] = {0, 0, 0, 1};
+    }
+
+    Matrix(Point3D v1, Point3D v2, Point3D v3, Point3D v4)
+    {
+        matrix[0] = v1;
+        matrix[1] = v2;
+        matrix[2] = v3;
+        matrix[3] = v3;
+    }
+
+    Matrix operator * (Matrix m)
+    {
+        Matrix res;
+        for (int a = 0; a < 4; a++)
+        {
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    res[a][i] += matrix[a][j] * m[j][i];
+                }
+            }
+        }
+        return res;
+    }
+
+
+    Point3D &operator [](int i)
+    {
+        return matrix[i];
+    }
+
+    operator GLfloat *()
+    {
+        return static_cast<GLfloat *>(&matrix[0].x);
+    }
+};
+
+const int trianglesPerSphere = 8192;
+const int verticesPerTriangle = 3;
+const int nAstronomicalObjects = 10;
+const int nVertices = trianglesPerSphere * verticesPerTriangle * nAstronomicalObjects;
+Point3D vertex[nVertices];
+Color colors[nVertices];
 int INDEX = 0;
 
 
@@ -52,7 +126,7 @@ int INDEX = 0;
 Point3D midPoint(Point3D a, Point3D b)
 {
     Point3D sum = {a.x+b.x, a.y+b.y, a.z+b.z};
-    return {sum.x/2, sum.y/2, sum.z/2};
+    return {sum.x/2, sum.y/2, sum.z/2, 1};
 }
 
 Point3D sphericalToCartesian(PointSpherical ps)
@@ -63,6 +137,7 @@ Point3D sphericalToCartesian(PointSpherical ps)
     p.x = ps.r * sin(pol) * cos(azi);
     p.y = ps.r * sin(pol) * sin(azi);
     p.z = ps.r * cos(pol);
+    p.w = 1;
     return p;
 }
 
@@ -86,16 +161,32 @@ struct Triangle
 {
     Point3D a,b,c;
 
+
+    // Draw with default greenish tones
     void draw()
     {
         vertex[INDEX] = a;
-        colors[INDEX] = GREEN_DIM;
+        colors[INDEX] = {0.0, 0.6, 0.0};
         INDEX++;
         vertex[INDEX] = b;
-        colors[INDEX] = GREEN_LIGHT;
+        colors[INDEX] = {0.0, 1.0, 0.0};
         INDEX++;
         vertex[INDEX] = c;
-        colors[INDEX] = GREEN_LIGHT;
+        colors[INDEX] = {0.0, 1.0, 0.0};
+        INDEX++;
+    }
+
+    // Draw with default greenish tones
+    void drawWithColor(Color color)
+    {
+        vertex[INDEX] = a;
+        colors[INDEX] = color.darken();
+        INDEX++;
+        vertex[INDEX] = b;
+        colors[INDEX] = color;
+        INDEX++;
+        vertex[INDEX] = c;
+        colors[INDEX] = color;
         INDEX++;
     }
 
@@ -104,6 +195,14 @@ struct Triangle
         for(auto i = ts.begin(); i != ts.end(); ++i)
         {
             i->draw();
+        }
+    }
+
+    static void drawTrianglesWithColor(vector<Triangle> ts, Color color)
+    {
+        for(auto i = ts.begin(); i != ts.end(); ++i)
+        {
+            i->drawWithColor(color);
         }
     }
 
@@ -138,18 +237,81 @@ struct Triangle
     }
 };
 
-int  Index = 0;
-void drawTriangle(Triangle t)
+
+
+typedef float Angle;
+
+Angle degToRad(Angle a)
 {
-    vertex[Index] = t.a;
-    colors[Index] = GREEN_DIM;
-    Index++;
-    vertex[Index] = t.b;
-    colors[Index] = GREEN_LIGHT;
-    Index++;
-    vertex[Index] = t.c;
-    colors[Index] = GREEN_LIGHT;
-    Index++;
+    return a * (M_PI / 180.0);
+}
+
+Angle radToDeg(Angle a)
+{
+    return a * (180.0 / M_PI);
+}
+
+
+Matrix zeroMatrix = Matrix();
+
+Matrix Rx(Angle a)
+{
+    Matrix m = zeroMatrix;
+    Angle angle = degToRad(a);
+    m[0][0] = 1;
+    m[3][3] = 1;
+    m[1][1] = cos(angle);
+    m[2][2] = cos(angle);
+    m[2][1] = -sin(angle);
+    m[1][2] = sin(angle);
+    return m;
+}
+
+Matrix Ry(Angle a)
+{
+    Matrix m = zeroMatrix;
+    Angle angle = degToRad(a);
+    m[1][1] = 1;
+    m[3][3] = 1;
+    m[0][0] = cos(angle);
+    m[2][2] = cos(angle);
+    m[0][2] = -sin(angle);
+    m[2][0] = sin(angle);
+    return m;
+}
+
+Matrix Rz(Angle a)
+{
+    Matrix m = zeroMatrix;
+    Angle angle = degToRad(a);
+    m[3][3] = 1;
+    m[2][2] = 1;
+    m[0][0] = cos(angle);
+    m[1][1] = cos(angle);
+    m[1][0] = -sin(angle);
+    m[0][1] = sin(angle);
+    return m;
+}
+
+/* Otras operaciones matriciales */
+Matrix scaleMatrix(float b1, float b2, float b3)
+{
+    Matrix c;
+    c[0][0] = b1;
+    c[1][1] = b2;
+    c[2][2] = b3;
+    c[3][3] = 1;
+    return c;
+}
+
+Matrix shiftMatrix(float x, float y, float z)
+{
+    Matrix c;
+    c[0][0] = c[1][1] = c[2][2] = c[3][3] = 1;
+    c[0][3] = x;
+    c[1][3] = y;
+    c[2][3] = z;
+    return c;
 }
 
 struct Octahedron
@@ -223,11 +385,13 @@ struct Octahedron
 struct Sphere
 {
     vector<Triangle> triangles;
-    int defaultDepth = 5;
+    const int defaultDepth = 5; // Changing this will brake vertices number count!
 
     void draw()
     {
-        Triangle::drawTriangles(triangles);
+        cout << "*DEBUG* Triangles per sphere: " << triangles.size() << endl;
+        /* Triangle::drawTriangles(triangles); */
+        Triangle::drawTrianglesWithColor(triangles, {0.7, 0.8, 0.5});
     }
 
     Sphere(float radius)
@@ -276,12 +440,16 @@ void init(void)
     // Atributos de posición
     GLuint position = glGetAttribLocation(program, "position");
     glEnableVertexAttribArray(position);
-    glVertexAttribPointer(position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+    glVertexAttribPointer(position, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
     // Atributos de color
     GLuint vcolor = glGetAttribLocation(program, "vcolor");
     glEnableVertexAttribArray(vcolor);
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
+
+    // Tranformaciones
+    GLint transMatrix = glGetUniformLocation(program, "trans");
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Rx(40) * Ry(20) * Rz(20) * scaleMatrix(0.5, 0.5, 0.5) * shiftMatrix(1.5, 0, 0));
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
@@ -293,15 +461,14 @@ void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
-    glDrawArrays(GL_TRIANGLES, 0, 100000);
-    /* glDrawArrays(GL_LINE_LOOP, 0, 10000); */
+    glDrawArrays(GL_TRIANGLES, 0, nVertices);
     glFlush();
 }
 
 int main(int argc, char **argv)
 {
 
-    Sphere s(0.3);
+    Sphere s(0.8);
     s.draw();
 
     // Inicialización de la ventana
