@@ -146,6 +146,11 @@ struct Matrix
         return m;
     }
 
+    static Matrix scaleMatrixU(float b)
+    {
+        return scaleMatrix(b, b, b);
+    }
+
     static Matrix shiftMatrix(float x, float y, float z)
     {
         Matrix m;
@@ -251,7 +256,6 @@ struct Triangle
         INDEX++;
     }
 
-    // Draw with default greenish tones
     void drawWithColor(Color color)
     {
         vertex[INDEX] = a;
@@ -386,6 +390,13 @@ struct Sphere
         Triangle::drawTrianglesWithColor(triangles, {0.7, 0.8, 0.5});
     }
 
+    void drawWithColor(Color c)
+    {
+        cout << "*DEBUG* Triangles per sphere: " << triangles.size() << endl;
+        /* Triangle::drawTriangles(triangles); */
+        Triangle::drawTrianglesWithColor(triangles, c);
+    }
+
     Sphere(float radius)
     {
         // Initial Octahedron
@@ -400,6 +411,32 @@ struct Sphere
     }
 };
 
+struct AstronomicalObject
+{
+    float radius;
+    float rotationPeriod;
+    float orbitalCenter;
+    float orbitalPeriod;
+    float orbitalRadius;
+    float rotationPosition;
+    float orbitalPosition;
+    Color color;
+
+    Sphere sphere = Sphere(radius);
+
+    void draw()
+    {
+        sphere.drawWithColor(color);
+    }
+};
+
+Color colorSun = { 1, 1, 0.5 };
+Color colorMercury = { 0.5, 0.5, 0.5 };
+
+AstronomicalObject sun = {0.2, 0, 0, 0, 0, 0, 0, colorSun};
+AstronomicalObject mercury = {0.1, 0, 0, 0, 0.3, 0, 0, colorMercury};
+
+AstronomicalObject astronomicalObjects[nAstronomicalObjects] = {sun, mercury};
 
 void init(void)
 {
@@ -450,28 +487,42 @@ void init(void)
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
     // Configurar color de fondo
-    glClearColor(0.5, 0.6, 1.0, 1.0);
+    /* glClearColor(0.5, 0.6, 1.0, 1.0); */
 }
 
 void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
-    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
-    glDrawArrays(GL_TRIANGLES, 0, verticesPerSphere);
-    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Matrix::shiftMatrix(1.5, 0, 0));
-    glDrawArrays(GL_TRIANGLES, verticesPerSphere, nVertices);
+
+    for (int i = 0; i < nAstronomicalObjects; i++)
+    {
+        auto object = astronomicalObjects[i];
+        glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
+                Matrix()
+                * Matrix::Rz(object.rotationPosition)
+                * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)
+                * Matrix::scaleMatrixU(object.radius));
+
+        glDrawArrays(GL_TRIANGLES, i*verticesPerSphere, verticesPerSphere);
+    }
+    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix()); */
+    /* glDrawArrays(GL_TRIANGLES, 0, verticesPerSphere); */
+    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Matrix::shiftMatrix(1.5, 0, 0)); */
+    /* glDrawArrays(GL_TRIANGLES, verticesPerSphere, nVertices); */
     glFlush();
 }
 
 int main(int argc, char **argv)
 {
 
-    Sphere s(0.2);
-    s.draw();
+    sun.draw();
+    mercury.draw();
+    /* Sphere s(0.2); */
+    /* s.draw(); */
 
-    Sphere s2(0.5);
-    s2.draw();
+    /* Sphere s2(0.5); */
+    /* s2.draw(); */
 
     // Inicialización de la ventana
     glutInit(&argc, argv);
