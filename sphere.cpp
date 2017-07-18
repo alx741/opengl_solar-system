@@ -426,15 +426,11 @@ struct Sphere
 
     void draw()
     {
-        cout << "*DEBUG* Triangles per sphere: " << triangles.size() << endl;
-        /* Triangle::drawTriangles(triangles); */
         Triangle::drawTrianglesWithColor(triangles, {0.7, 0.8, 0.5});
     }
 
     void drawWithColor(Color c)
     {
-        cout << "*DEBUG* Triangles per sphere: " << triangles.size() << endl;
-        /* Triangle::drawTriangles(triangles); */
         Triangle::drawTrianglesWithColor(triangles, c);
     }
 
@@ -606,7 +602,6 @@ void display(void)
             * Matrix::Rz(object.rotationPosition)
             ;
         /* Matrix x =  Matrix::scaleMatrixU(0.3) * Matrix::Rx(80); */
-        x.print();
         glm::mat4 trans;
         trans = glm::rotate(trans, glm::radians(80.0f), glm::vec3(0.0, 0.0, 1.0));
         trans = glm::scale(trans, glm::vec3(0.1, 0.1, 0.1));  
