@@ -207,7 +207,12 @@ const int nVertices = trianglesPerSphere * verticesPerTriangle * nAstronomicalOb
 Point3D vertex[nVertices];
 Color colors[nVertices];
 int INDEX = 0;
-GLint transMatrix;
+/* GLint transMatrix; */
+GLint matrixX;
+GLint matrixY;
+GLint matrixZ;
+GLint matrixPos;
+GLint matrixSize;
 
 
 // Encontrar el punto medio entre dos puntos a y b
@@ -441,16 +446,14 @@ struct AstronomicalObject
     float orbitalPosition = 0;
     Color color;
 
-    const float rotationalStep = 0.1;
 
-    Sphere sphere = Sphere(radius);
-    /* Octahedron oct = Octahedron(radius); */
+    Sphere sphere = Sphere(1);
 
     void rotate()
     {
         if (rotationPosition < 360)
         {
-            rotationPosition += rotationalStep;
+            rotationPosition += rotationPeriod;
         }
         else
         {
@@ -461,7 +464,6 @@ struct AstronomicalObject
     void draw()
     {
         sphere.drawWithColor(color);
-        /* oct.drawWithColor(color); */
     }
 };
 
@@ -474,19 +476,21 @@ Color colorJupiter = { 0.5, 0.3, 0.1 };
 Color colorSaturn = { 0.6, 0.5, 0.3 };
 Color colorUranus = { 0.1, 0.8, 0.9 };
 Color colorNeptune = { 0.2, 0.3, 0.6 };
+Color colorMoon = { 0.9, 0.9, 0.9 };
 
-AstronomicalObject sun = {0.8, 0, 0, 0, 0, 0, 0, colorSun};
-AstronomicalObject mercury = {0.05, 0, 0, 0, 0.3, 0, 0, colorMercury};
-AstronomicalObject venus = {0.08, 0, 0, 0, 0.5, 0, 0, colorVenus};
-AstronomicalObject earth = {0.08, 0, 0, 0, 0.7, 0, 0, colorEarth};
-AstronomicalObject mars = {0.07, 0, 0, 0, 0.9, 0, 0, colorMars};
-AstronomicalObject jupiter = {0.15, 0, 0, 0, 1.1, 0, 0, colorJupiter};
-AstronomicalObject saturn = {0.12, 0, 0, 0, 1.4, 0, 0, colorSaturn};
-AstronomicalObject uranus = {0.09, 0, 0, 0, 1.6, 0, 0, colorUranus};
-AstronomicalObject neptune = {0.09, 0, 0, 0, 1.8, 0, 0, colorNeptune};
+AstronomicalObject sun = {0.1, 0.1, 0, 0, 0, 0, 0, colorSun};
+AstronomicalObject mercury = {0.02, 0.1, 0, 0, 7.0, 0, 0, colorMercury};
+AstronomicalObject venus = {0.025, 0.1, 0, 0, 8.0, 0, 0, colorVenus};
+AstronomicalObject earth = {0.03, 0.1, 0, 0, 9.3, 0, 0, colorEarth};
+AstronomicalObject mars = {0.025, 0.1, 0, 0, 14.5, 0, 0, colorMars};
+AstronomicalObject jupiter = {0.05, 0.1, 0, 0, 9.0, 0, 0, colorJupiter};
+AstronomicalObject saturn = {0.04, 0.1, 0, 0, 14.0, 0, 0, colorSaturn};
+AstronomicalObject uranus = {0.03, 0.1, 0, 0, 21.5, 0, 0, colorUranus};
+AstronomicalObject neptune = {0.03, 0.1, 0, 0, 24.0, 0, 0, colorNeptune};
+AstronomicalObject moon = {0.01, 0.1, 0, 0, 32.0, 0, 0, colorMoon};
 
 AstronomicalObject astronomicalObjects[nAstronomicalObjects]
-    = {sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune};
+    = {sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, moon};
 
 void init(void)
 {
@@ -527,8 +531,14 @@ void init(void)
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
 
     // Tranformaciones
-    transMatrix = glGetUniformLocation(program, "trans");
-    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
+    /* transMatrix = glGetUniformLocation(program, "trans"); */
+    matrixX = glGetUniformLocation(program, "x");
+    matrixY = glGetUniformLocation(program, "y");
+    matrixZ = glGetUniformLocation(program, "z");
+    matrixPos = glGetUniformLocation(program, "pos");
+    matrixSize = glGetUniformLocation(program, "size");
+
+    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix()); */
     /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
     /*         Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20) */
     /*         * Matrix::scaleMatrix(0.5, 0.5, 0.5) */
@@ -545,13 +555,20 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    /* for (int i = 0; i < nAstronomicalObjects; i++) */
-    for (int i = 0; i < 1; i++)
+    for (int i = 0; i < nAstronomicalObjects; i++)
+    /* for (int i = 0; i < 1; i++) */
     {
         auto object = astronomicalObjects[i];
-        glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
-                Matrix::Rz(object.rotationPosition));
-                /* * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
+
+        glUniformMatrix4fv(matrixX, 1, GL_TRUE, Matrix::Rz(object.rotationPosition));
+        glUniformMatrix4fv(matrixY, 1, GL_TRUE, Matrix::Ry(0));
+        glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::Rx(0));
+        glUniformMatrix4fv(matrixPos, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0));
+        glUniformMatrix4fv(matrixSize, 1, GL_TRUE, Matrix::scaleMatrixU(object.radius));
+
+        /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
+        /*         Matrix::Rz(object.rotationPosition)); */
+                /* Matrix::shiftMatrix(0.2, 0, 0)); */
                 /* * Matrix::scaleMatrix(0.5, 0.5, 0.5)); */
                 /* * Matrix::scaleMatrixU(object.radius)); */
 
@@ -566,9 +583,10 @@ void display(void)
 
 void idle()
 {
-    cout << "rotation sun: " << astronomicalObjects[0].rotationPosition << endl;
-    cout << "sun fucking radius: " << astronomicalObjects[0].radius << endl;
-    astronomicalObjects[0].rotate();
+    for (int i = 0; i < nAstronomicalObjects; i++)
+    {
+        astronomicalObjects[i].rotate();
+    }
     glutPostRedisplay();
 }
 
@@ -584,6 +602,8 @@ int main(int argc, char **argv)
     saturn.draw();
     uranus.draw();
     neptune.draw();
+    moon.draw();
+
     /* Sphere s(0.2); */
     /* s.draw(); */
 
