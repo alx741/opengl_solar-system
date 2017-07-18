@@ -506,13 +506,13 @@ Color colorMoon    = { 0.9, 0.9, 0.9 };
 AstronomicalObject sun     = {0.1, 0.05, 0, 0, 0, 0, 0, colorSun};
 AstronomicalObject mercury = {0.02, 0.1, 0.3, 0, 7.0, 0, 0, colorMercury};
 AstronomicalObject venus   = {0.025, 0.1, 0.25, 0, 8.0, 0, 0, colorVenus};
-AstronomicalObject earth   = {0.03, 0.1, 0.15, 0, 9.3, 0, 0, colorEarth};
-AstronomicalObject mars    = {0.025, 0.1, 0.14, 0, 14.5, 0, 0, colorMars};
-AstronomicalObject jupiter = {0.05, 0.1, 0.10, 0, 9.0, 0, 0, colorJupiter};
-AstronomicalObject saturn  = {0.04, 0.1, 0.085, 0, 14.0, 0, 0, colorSaturn};
-AstronomicalObject uranus  = {0.03, 0.1, 0.070, 0, 21.5, 0, 0, colorUranus};
-AstronomicalObject neptune = {0.03, 0.1, 0.062, 0, 24.0, 0, 0, colorNeptune};
-AstronomicalObject moon    = {0.01, 0.1, 0.15, 0, 9.3, 0, 0, colorMoon};
+AstronomicalObject earth   = {0.03, 0.1, 0.15, 0, 10.3, 0, 0, colorEarth};
+AstronomicalObject mars    = {0.025, 0.1, 0.14, 0, 16.5, 0, 0, colorMars};
+AstronomicalObject jupiter = {0.05, 0.3, 0.10, 0, 11.0, 0, 0, colorJupiter};
+AstronomicalObject saturn  = {0.04, 0.2, 0.085, 0, 17.0, 0, 0, colorSaturn};
+AstronomicalObject uranus  = {0.03, 0.15, 0.070, 0, 27.5, 0, 0, colorUranus};
+AstronomicalObject neptune = {0.03, 0.13, 0.062, 0, 30.0, 0, 0, colorNeptune};
+AstronomicalObject moon    = {0.01, 0.2, 0.15, 0, 5.0, 0, 0, colorMoon};
 
 AstronomicalObject astronomicalObjects[nAstronomicalObjects]
     = {sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, moon};
@@ -596,33 +596,14 @@ void display(void)
         }
         else
         {
-
-
-    /* movePlanet -> return Rz(angTraslacion) * shiftMatrix(x, y, z) * Rz(angRotacion); */
-    /* Matrix rot = movPlanet(planeta.rotacionActual, planeta.traslacionActual, */
-    /*                          planeta.radioOrbita, 0, 0) * scaleMatrix(planeta.diametro, planeta.diametro, */
-    /*                                  planeta.diametro); */
-
-    /* Matrix rot = Rz(sistemaSolar[3].traslacionActual) * shiftMatrix( */
-    /*                    sistemaSolar[3].radioOrbita, 0, */
-    /*                    0) * Rz(luna.traslacionActual) * shiftMatrix(luna.radioOrbita, 0, */
-    /*                            0) * Rz(luna.rotacionActual) * scaleMatrix(luna.diametro, luna.diametro, */
-    /*                                    luna.diametro); */
             auto earth = astronomicalObjects[3];
             trans =
-                /* Matrix::Rz(earth.orbitalPosition) */
                 Matrix::scaleMatrixU(object.radius)
                 * Matrix::Rz(earth.orbitalPosition)
-                * Matrix::shiftMatrix(earth.orbitalRadius + 14.5, 0, 0)
+                * Matrix::shiftMatrix(earth.orbitalRadius + 20.5, 0, 0)
                 * Matrix::Rz(object.orbitalPosition)
                 * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)
                 * Matrix::Rz(object.orbitalPosition)
-                /* * Matrix::Rz(earth.orbitalPosition) */
-
-                /* Matrix::scaleMatrixU(object.radius) */
-                /* * Matrix::Rz(object.orbitalPosition) */
-                /* * Matrix::shiftMatrix(object.orbitalRadius, 0.0, 0.0) */
-                /* * Matrix::Rz(object.rotationPosition) */
                 ;
         }
         glUniformMatrix4fv(transMatrix, 1, GL_TRUE, trans);
@@ -654,12 +635,6 @@ int main(int argc, char **argv)
     uranus.draw();
     neptune.draw();
     moon.draw();
-
-    /* Sphere s(0.2); */
-    /* s.draw(); */
-
-    /* Sphere s2(0.5); */
-    /* s2.draw(); */
 
     // Inicialización de la ventana
     glutInit(&argc, argv);
