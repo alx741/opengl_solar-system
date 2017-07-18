@@ -1,6 +1,9 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -55,7 +58,12 @@ struct Point3D
 
     static Point3D zero()
     {
-        return {0, 0, 0, 0};
+        return {0, 0, 0, 1};
+    }
+
+    void print()
+    {
+        cout << "{ " << x << " " << y << " " << z << " " << w << " }" << endl;
     }
 
     GLfloat &operator [](int i)
@@ -93,10 +101,10 @@ struct Matrix
     // Identity Matrix
     Matrix()
     {
-        matrix[0] = {1, 0, 0, 0};
-        matrix[1] = {0, 1, 0, 0};
-        matrix[2] = {0, 0, 1, 0};
-        matrix[3] = {0, 0, 0, 1};
+        matrix[0] = {0, 0, 0, 0};
+        matrix[1] = {0, 0, 0, 0};
+        matrix[2] = {0, 0, 0, 0};
+        matrix[3] = {0, 0, 0, 0};
     }
 
     Matrix(Point3D v1, Point3D v2, Point3D v3, Point3D v4)
@@ -105,6 +113,15 @@ struct Matrix
         matrix[1] = v2;
         matrix[2] = v3;
         matrix[3] = v3;
+    }
+
+    void print()
+    {
+        matrix[0].print();
+        matrix[1].print();
+        matrix[2].print();
+        matrix[3].print();
+        cout << endl << endl;
     }
 
     static Matrix Rx(Angle a)
@@ -207,7 +224,7 @@ const int nVertices = trianglesPerSphere * verticesPerTriangle * nAstronomicalOb
 Point3D vertex[nVertices];
 Color colors[nVertices];
 int INDEX = 0;
-/* GLint transMatrix; */
+GLint transMatrix;
 GLint matrixX;
 GLint matrixY;
 GLint matrixZ;
@@ -439,8 +456,8 @@ struct AstronomicalObject
 {
     float radius = 0;
     float rotationPeriod = 0;
-    float orbitalCenter = 0;
     float orbitalPeriod = 0;
+    float orbitalCenter = 0;
     float orbitalRadius = 0;
     float rotationPosition = 0;
     float orbitalPosition = 0;
@@ -491,14 +508,14 @@ Color colorNeptune = { 0.2, 0.3, 0.6 };
 Color colorMoon = { 0.9, 0.9, 0.9 };
 
 AstronomicalObject sun = {0.1, 0.1, 0, 0, 0, 0, 0, colorSun};
-AstronomicalObject mercury = {0.02, 0.1, 0, 0, 7.0, 0, 0, colorMercury};
-AstronomicalObject venus = {0.025, 0.1, 0, 0, 8.0, 0, 0, colorVenus};
-AstronomicalObject earth = {0.03, 0.1, 0, 0, 9.3, 0, 0, colorEarth};
-AstronomicalObject mars = {0.025, 0.1, 0, 0, 14.5, 0, 0, colorMars};
-AstronomicalObject jupiter = {0.05, 0.1, 0, 0, 9.0, 0, 0, colorJupiter};
-AstronomicalObject saturn = {0.04, 0.1, 0, 0, 14.0, 0, 0, colorSaturn};
-AstronomicalObject uranus = {0.03, 0.1, 0, 0, 21.5, 0, 0, colorUranus};
-AstronomicalObject neptune = {0.03, 0.1, 0, 0, 24.0, 0, 0, colorNeptune};
+AstronomicalObject mercury = {0.02, 0.1, 0.3, 0, 7.0, 0, 0, colorMercury};
+AstronomicalObject venus = {0.025, 0.1, 0.25, 0, 8.0, 0, 0, colorVenus};
+AstronomicalObject earth = {0.03, 0.1, 0.15, 0, 9.3, 0, 0, colorEarth};
+AstronomicalObject mars = {0.025, 0.1, 0.14, 0, 14.5, 0, 0, colorMars};
+AstronomicalObject jupiter = {0.05, 0.1, 0.10, 0, 9.0, 0, 0, colorJupiter};
+AstronomicalObject saturn = {0.04, 0.1, 0.085, 0, 14.0, 0, 0, colorSaturn};
+AstronomicalObject uranus = {0.03, 0.1, 0.070, 0, 21.5, 0, 0, colorUranus};
+AstronomicalObject neptune = {0.03, 0.1, 0.062, 0, 24.0, 0, 0, colorNeptune};
 AstronomicalObject moon = {0.01, 0.1, 0, 0, 32.0, 0, 0, colorMoon};
 
 AstronomicalObject astronomicalObjects[nAstronomicalObjects]
@@ -543,14 +560,14 @@ void init(void)
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
 
     // Tranformaciones
-    /* transMatrix = glGetUniformLocation(program, "trans"); */
-    matrixX = glGetUniformLocation(program, "x");
-    matrixY = glGetUniformLocation(program, "y");
-    matrixZ = glGetUniformLocation(program, "z");
-    matrixPos = glGetUniformLocation(program, "pos");
-    matrixSize = glGetUniformLocation(program, "size");
+    transMatrix = glGetUniformLocation(program, "trans");
+    /* matrixX = glGetUniformLocation(program, "x"); */
+    /* matrixY = glGetUniformLocation(program, "y"); */
+    /* matrixZ = glGetUniformLocation(program, "z"); */
+    /* matrixPos = glGetUniformLocation(program, "pos"); */
+    /* matrixSize = glGetUniformLocation(program, "size"); */
 
-    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix()); */
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
     /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
     /*         Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20) */
     /*         * Matrix::scaleMatrix(0.5, 0.5, 0.5) */
@@ -568,15 +585,36 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT);
 
     for (int i = 0; i < nAstronomicalObjects; i++)
+    /* for (int i = 0; i < 1; i++) */
     {
         auto object = astronomicalObjects[i];
 
-        glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::Rz(object.rotationPosition));
-        glUniformMatrix4fv(matrixY, 1, GL_TRUE, Matrix::Ry(0));
-        glUniformMatrix4fv(matrixX, 1, GL_TRUE, Matrix::Rx(0));
-        glUniformMatrix4fv(matrixPos, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0));
+        /* glUniformMatrix4fv(matrixSize, 1, GL_TRUE, Matrix::scaleMatrixU(object.radius)); */
+        /* glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::Rz(object.rotationPosition)); */
+        /* glUniformMatrix4fv(matrixY, 1, GL_TRUE, Matrix::Ry(0)); */
+        /* glUniformMatrix4fv(matrixX, 1, GL_TRUE, Matrix::Rx(0)); */
+        /* glUniformMatrix4fv(matrixPos, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
         /* glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
-        glUniformMatrix4fv(matrixSize, 1, GL_TRUE, Matrix::scaleMatrixU(object.radius));
+
+        /* Matrix x = Matrix::scaleMatrixU(1); */
+        /* Matrix x = Matrix::Rx(20); */
+        /* Matrix x =  Matrix::shiftMatrix(0.9, 0.5, 0.0) * Matrix::Rx(80) * Matrix::scaleMatrixU(0.3); */
+        Matrix x =
+            Matrix::scaleMatrixU(object.radius)
+            * Matrix::Rz(object.orbitalPosition)
+            * Matrix::shiftMatrix(object.orbitalRadius, 0.0, 0.0)
+            * Matrix::Rz(object.rotationPosition)
+            ;
+        /* Matrix x =  Matrix::scaleMatrixU(0.3) * Matrix::Rx(80); */
+        x.print();
+        glm::mat4 trans;
+        trans = glm::rotate(trans, glm::radians(80.0f), glm::vec3(0.0, 0.0, 1.0));
+        trans = glm::scale(trans, glm::vec3(0.1, 0.1, 0.1));  
+        /* glUniformMatrix4fv(transMatrix, 1, GL_TRUE, glm::value_ptr(trans)); */
+        glUniformMatrix4fv(transMatrix, 1, GL_TRUE, x);
+                /* Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20)); */
+                /* * Matrix::scaleMatrix(0.5, 0.5, 0.5) */
+                /* * Matrix::shiftMatrix(1.5, 0, 0)); */
 
         glDrawArrays(GL_TRIANGLES, i*verticesPerSphere, verticesPerSphere);
     }
