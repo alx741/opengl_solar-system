@@ -67,11 +67,6 @@ struct Point3D
     {
         return *(&x + i);
     }
-
-    Point3D operator + (const Point3D &v) const
-    {
-        return {x + v.x, y + v.y, z + v.z, w + v.w};
-    }
 };
 
 struct PointSpherical
@@ -204,8 +199,6 @@ struct Matrix
     }
 };
 
-/* static const Matrix zeroMatrix = Matrix({0, 0, 0, 0}, {0, 0, 0, 0}  {0, 0, 0, 0}, {0, 0, 0, 0}); */
-
 const int trianglesPerSphere = 8192;
 const int verticesPerTriangle = 3;
 const int nAstronomicalObjects = 10;
@@ -250,23 +243,6 @@ Point3D pullToRadius(Point3D p, float r)
     PointSpherical ps = cartesianToSpherical(p);
     ps.r = r;
     return sphericalToCartesian(ps);
-}
-
-Point3D unit(const Point3D &p)
-{
-    Point3D c;
-    double d = 0.0;
-    for (int i = 0; i < 3; i++)
-    {
-        d += p[i] * p[i];
-    }
-    d = sqrt(d);
-    if (d > 0.0) for (int i = 0; i < 3; i++)
-        {
-            c[i] = p[i] / d;
-        }
-    c[3] = 1.0;
-    return c;
 }
 
 struct Triangle
@@ -317,97 +293,38 @@ struct Triangle
         }
     }
 
-    /* static void subTrianglesRad(Triangle &t, int depth, float r, */
-    /*         vector<Triangle> *triangles) */
-    /* { */
-    /*     if (depth == 0) */
-    /*     { */
-    /*         triangles->push_back(t); */
-    /*     } */
-    /*     else */
-    /*     { */
-    /*         Triangle t1 = { */
-    /*             t.a, pullToRadius(midPoint(t.a, t.b), r), */
-    /*             pullToRadius(midPoint(t.a, t.c), r) }; */
-    /*         Triangle t2 = { */
-    /*             t.c, pullToRadius(midPoint(t.c, t.b), r), */
-    /*             pullToRadius(midPoint(t.c, t.a), r) }; */
-    /*         Triangle t3 = { */
-    /*             t.b, pullToRadius(midPoint(t.b, t.a), r), */
-    /*             pullToRadius(midPoint(t.b, t.c), r) }; */
-    /*         Triangle t4 = { */
-    /*             pullToRadius(midPoint(t.c, t.a), r), */
-    /*             pullToRadius(midPoint(t.b, t.a), r), */
-    /*             pullToRadius(midPoint(t.b, t.c), r) }; */
-
-    /*         subTrianglesRad(t1, depth-1, r, triangles); */
-    /*         subTrianglesRad(t2, depth-1, r, triangles); */
-    /*         subTrianglesRad(t3, depth-1, r, triangles); */
-    /*         subTrianglesRad(t4, depth-1, r, triangles); */
-    /*     } */
-    /* } */
-
-    /* void divide_triangle(Point a, Point b, Point c, int count) */
     static void subTrianglesRad(Triangle &t, int depth, float r,
             vector<Triangle> *triangles)
     {
-        int i;
-        Point3D v0;
-        Point3D v1;
-        Point3D v2;
-
-        if (depth > 0)
+        if (depth == 0)
         {
-
-            v0 = unit(t.a + t.b);
-            v1 = unit(t.a + t.c);
-            v2 = unit(t.b + t.c);
-
-            Triangle t1 = {t.a, v1, v0};
-            subTrianglesRad(t1, depth - 1, r, triangles);
-
-            Triangle t2 = {t.c, v2, v1};
-            subTrianglesRad(t2, depth - 1, r, triangles);
-
-            Triangle t3 = {t.b, v0, v2};
-            subTrianglesRad(t3, depth - 1, r, triangles);
-
-            Triangle t4 = {v0, v1, v2};
-            subTrianglesRad(t4, depth - 1, r, triangles);
-
+            triangles->push_back(t);
         }
         else
         {
-            /* triangle(a, b, c); */
-            Triangle newT = {t.a, t.b, t.c};
-            triangles->push_back(newT);
+            Triangle t1 = {
+                t.a, pullToRadius(midPoint(t.a, t.b), r),
+                pullToRadius(midPoint(t.a, t.c), r) };
+            Triangle t2 = {
+                t.c, pullToRadius(midPoint(t.c, t.b), r),
+                pullToRadius(midPoint(t.c, t.a), r) };
+            Triangle t3 = {
+                t.b, pullToRadius(midPoint(t.b, t.a), r),
+                pullToRadius(midPoint(t.b, t.c), r) };
+            Triangle t4 = {
+                pullToRadius(midPoint(t.c, t.a), r),
+                pullToRadius(midPoint(t.b, t.a), r),
+                pullToRadius(midPoint(t.b, t.c), r) };
+
+            subTrianglesRad(t1, depth-1, r, triangles);
+            subTrianglesRad(t2, depth-1, r, triangles);
+            subTrianglesRad(t3, depth-1, r, triangles);
+            subTrianglesRad(t4, depth-1, r, triangles);
         }
     }
 };
 
 
-
-Point3D v[4] =
-{
-    {0.0, 0.0, 1.0, 1.0},
-    {0.0, 0.942809, -0.333333, 1.0},
-    {-0.816497, -0.471405, -0.333333, 1.0},
-    {0.816497, -0.471405, -0.333333, 1.0}
-};
-
-
-
-/* void tetra(int n) */
-/* { */
-/*     divide_triangle(v[0], v[1], v[2], n); */
-/*     divide_triangle(v[3], v[2], v[1], n); */
-/*     divide_triangle(v[0], v[3], v[1], n); */
-/*     divide_triangle(v[0], v[2], v[3], n); */
-/*     /1* divide_triangle(v[0], v[1], v[2], n); *1/ */
-/*     /1* divide_triangle(v[3], v[2], v[1], n); *1/ */
-/*     /1* divide_triangle(v[0], v[3], v[1], n); *1/ */
-/*     /1* divide_triangle(v[0], v[2], v[3], n); *1/ */
-/* } */
 
 struct Octahedron
 {
@@ -501,24 +418,15 @@ struct Sphere
 
     Sphere(float radius)
     {
-        Triangle t1 = {v[0], v[1], v[2]};
-        Triangle t2 = {v[3], v[2], v[1]};
-        Triangle t3 = {v[0], v[3], v[1]};
-        Triangle t4 = {v[0], v[2], v[3]};
-        Triangle::subTrianglesRad(t1, defaultDepth, radius, &triangles);
-        Triangle::subTrianglesRad(t2, defaultDepth, radius, &triangles);
-        Triangle::subTrianglesRad(t3, defaultDepth, radius, &triangles);
-        Triangle::subTrianglesRad(t4, defaultDepth, radius, &triangles);
+        // Initial Octahedron
+        Octahedron octahedron(radius);
 
-        /* // Initial Octahedron */
-        /* Octahedron octahedron(radius); */
-
-        /* // Subdiveide each triangle */
-        /* for (int i = 0; i < 8; i++) */
-        /* { */
-        /*     Triangle::subTrianglesRad(octahedron.ts[i], defaultDepth, radius, */
-        /*             &triangles); */
-        /* } */
+        // Subdiveide each triangle
+        for (int i = 0; i < 8; i++)
+        {
+            Triangle::subTrianglesRad(octahedron.ts[i], defaultDepth, radius,
+                    &triangles);
+        }
     }
 };
 
@@ -642,8 +550,7 @@ void display(void)
     {
         auto object = astronomicalObjects[i];
         glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
-                Matrix()
-                * Matrix::Ry(object.rotationPosition));
+                Matrix::Rz(object.rotationPosition));
                 /* * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
                 /* * Matrix::scaleMatrix(0.5, 0.5, 0.5)); */
                 /* * Matrix::scaleMatrixU(object.radius)); */
