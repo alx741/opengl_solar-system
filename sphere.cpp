@@ -461,6 +461,18 @@ struct AstronomicalObject
         }
     }
 
+    void orbit()
+    {
+        if (orbitalPosition < 360)
+        {
+            orbitalPosition += orbitalPeriod;
+        }
+        else
+        {
+            orbitalPosition = 0;
+        }
+    }
+
     void draw()
     {
         sphere.drawWithColor(color);
@@ -556,28 +568,18 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT);
 
     for (int i = 0; i < nAstronomicalObjects; i++)
-    /* for (int i = 0; i < 1; i++) */
     {
         auto object = astronomicalObjects[i];
 
-        glUniformMatrix4fv(matrixX, 1, GL_TRUE, Matrix::Rz(object.rotationPosition));
+        glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::Rz(object.rotationPosition));
         glUniformMatrix4fv(matrixY, 1, GL_TRUE, Matrix::Ry(0));
-        glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::Rx(0));
+        glUniformMatrix4fv(matrixX, 1, GL_TRUE, Matrix::Rx(0));
         glUniformMatrix4fv(matrixPos, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0));
+        /* glUniformMatrix4fv(matrixZ, 1, GL_TRUE, Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
         glUniformMatrix4fv(matrixSize, 1, GL_TRUE, Matrix::scaleMatrixU(object.radius));
-
-        /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
-        /*         Matrix::Rz(object.rotationPosition)); */
-                /* Matrix::shiftMatrix(0.2, 0, 0)); */
-                /* * Matrix::scaleMatrix(0.5, 0.5, 0.5)); */
-                /* * Matrix::scaleMatrixU(object.radius)); */
 
         glDrawArrays(GL_TRIANGLES, i*verticesPerSphere, verticesPerSphere);
     }
-    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix()); */
-    /* glDrawArrays(GL_TRIANGLES, 0, verticesPerSphere); */
-    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Matrix::shiftMatrix(1.5, 0, 0)); */
-    /* glDrawArrays(GL_TRIANGLES, verticesPerSphere, nVertices); */
     glFlush();
 }
 
@@ -586,6 +588,7 @@ void idle()
     for (int i = 0; i < nAstronomicalObjects; i++)
     {
         astronomicalObjects[i].rotate();
+        astronomicalObjects[i].orbit();
     }
     glutPostRedisplay();
 }
