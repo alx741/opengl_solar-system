@@ -189,10 +189,12 @@ struct Matrix
 const int trianglesPerSphere = 8192;
 const int verticesPerTriangle = 3;
 const int nAstronomicalObjects = 10;
+const int verticesPerSphere = trianglesPerSphere * verticesPerTriangle;
 const int nVertices = trianglesPerSphere * verticesPerTriangle * nAstronomicalObjects;
 Point3D vertex[nVertices];
 Color colors[nVertices];
 int INDEX = 0;
+GLint transMatrix;
 
 
 // Encontrar el punto medio entre dos puntos a y b
@@ -438,11 +440,12 @@ void init(void)
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
 
     // Tranformaciones
-    GLint transMatrix = glGetUniformLocation(program, "trans");
-    glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
-            Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20)
-            * Matrix::scaleMatrix(0.5, 0.5, 0.5)
-            * Matrix::shiftMatrix(1.5, 0, 0));
+    transMatrix = glGetUniformLocation(program, "trans");
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
+    /* glUniformMatrix4fv(transMatrix, 1, GL_FALSE, */
+    /*         Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20) */
+    /*         * Matrix::scaleMatrix(0.5, 0.5, 0.5) */
+    /*         * Matrix::shiftMatrix(1.5, 0, 0)); */
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
@@ -454,15 +457,21 @@ void display(void)
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
-    glDrawArrays(GL_TRIANGLES, 0, nVertices);
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
+    glDrawArrays(GL_TRIANGLES, 0, verticesPerSphere);
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Matrix::shiftMatrix(1.5, 0, 0));
+    glDrawArrays(GL_TRIANGLES, verticesPerSphere, nVertices);
     glFlush();
 }
 
 int main(int argc, char **argv)
 {
 
-    Sphere s(0.8);
+    Sphere s(0.2);
     s.draw();
+
+    Sphere s2(0.5);
+    s2.draw();
 
     // Inicialización de la ventana
     glutInit(&argc, argv);
