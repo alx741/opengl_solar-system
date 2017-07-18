@@ -1,10 +1,9 @@
-FILE=sphere
+FILE=solar
 
-CFLAGS =
-CFLAGS += -lGL -lGLU -lglut -lGLEW -D _DEBUG
+CFLAGS = -lGL -lGLU -lglut -lGLEW
 
 gasket: $(FILE).cpp
-	g++ -lGL -lGLU -lglut -lGLEW $(FILE).cpp -o $(FILE)
+	g++ $(CFLAGS) $(FILE).cpp -o $(FILE)
 
 clean:
 	rm $(FILE)
