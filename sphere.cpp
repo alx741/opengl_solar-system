@@ -13,10 +13,20 @@ struct Color
 
     Color darken()
     {
+        return darkenWithFactor(0.2);
+    }
+
+    Color darkenMore()
+    {
+        return darkenWithFactor(0.4);
+    }
+
+    Color darkenWithFactor(float factor)
+    {
         Color newColor = {r, g, b};
-        float newR = r - 0.2;
-        float newG = g - 0.2;
-        float newB = b - 0.2;
+        float newR = r - factor;
+        float newG = g - factor;
+        float newB = b - factor;
         if (newR >= 0) { newColor.r = newR; }
         if (newG >= 0) { newColor.g = newG; }
         if (newB >= 0) { newColor.b = newB; }
@@ -56,6 +66,11 @@ struct Point3D
     const GLfloat operator [](int i) const
     {
         return *(&x + i);
+    }
+
+    Point3D operator + (const Point3D &v) const
+    {
+        return {x + v.x, y + v.y, z + v.z, w + v.w};
     }
 };
 
@@ -237,6 +252,23 @@ Point3D pullToRadius(Point3D p, float r)
     return sphericalToCartesian(ps);
 }
 
+Point3D unit(const Point3D &p)
+{
+    Point3D c;
+    double d = 0.0;
+    for (int i = 0; i < 3; i++)
+    {
+        d += p[i] * p[i];
+    }
+    d = sqrt(d);
+    if (d > 0.0) for (int i = 0; i < 3; i++)
+        {
+            c[i] = p[i] / d;
+        }
+    c[3] = 1.0;
+    return c;
+}
+
 struct Triangle
 {
     Point3D a,b,c;
@@ -265,7 +297,7 @@ struct Triangle
         colors[INDEX] = color;
         INDEX++;
         vertex[INDEX] = c;
-        colors[INDEX] = color;
+        colors[INDEX] = color.darkenMore();
         INDEX++;
     }
 
@@ -285,39 +317,97 @@ struct Triangle
         }
     }
 
+    /* static void subTrianglesRad(Triangle &t, int depth, float r, */
+    /*         vector<Triangle> *triangles) */
+    /* { */
+    /*     if (depth == 0) */
+    /*     { */
+    /*         triangles->push_back(t); */
+    /*     } */
+    /*     else */
+    /*     { */
+    /*         Triangle t1 = { */
+    /*             t.a, pullToRadius(midPoint(t.a, t.b), r), */
+    /*             pullToRadius(midPoint(t.a, t.c), r) }; */
+    /*         Triangle t2 = { */
+    /*             t.c, pullToRadius(midPoint(t.c, t.b), r), */
+    /*             pullToRadius(midPoint(t.c, t.a), r) }; */
+    /*         Triangle t3 = { */
+    /*             t.b, pullToRadius(midPoint(t.b, t.a), r), */
+    /*             pullToRadius(midPoint(t.b, t.c), r) }; */
+    /*         Triangle t4 = { */
+    /*             pullToRadius(midPoint(t.c, t.a), r), */
+    /*             pullToRadius(midPoint(t.b, t.a), r), */
+    /*             pullToRadius(midPoint(t.b, t.c), r) }; */
+
+    /*         subTrianglesRad(t1, depth-1, r, triangles); */
+    /*         subTrianglesRad(t2, depth-1, r, triangles); */
+    /*         subTrianglesRad(t3, depth-1, r, triangles); */
+    /*         subTrianglesRad(t4, depth-1, r, triangles); */
+    /*     } */
+    /* } */
+
+    /* void divide_triangle(Point a, Point b, Point c, int count) */
     static void subTrianglesRad(Triangle &t, int depth, float r,
             vector<Triangle> *triangles)
     {
-        if (depth == 0)
+        int i;
+        Point3D v0;
+        Point3D v1;
+        Point3D v2;
+
+        if (depth > 0)
         {
-            triangles->push_back(t);
+
+            v0 = unit(t.a + t.b);
+            v1 = unit(t.a + t.c);
+            v2 = unit(t.b + t.c);
+
+            Triangle t1 = {t.a, v1, v0};
+            subTrianglesRad(t1, depth - 1, r, triangles);
+
+            Triangle t2 = {t.c, v2, v1};
+            subTrianglesRad(t2, depth - 1, r, triangles);
+
+            Triangle t3 = {t.b, v0, v2};
+            subTrianglesRad(t3, depth - 1, r, triangles);
+
+            Triangle t4 = {v0, v1, v2};
+            subTrianglesRad(t4, depth - 1, r, triangles);
+
         }
         else
         {
-            Triangle t1 = {
-                t.a, pullToRadius(midPoint(t.a, t.b), r),
-                pullToRadius(midPoint(t.a, t.c), r) };
-            Triangle t2 = {
-                t.c, pullToRadius(midPoint(t.c, t.b), r),
-                pullToRadius(midPoint(t.c, t.a), r) };
-            Triangle t3 = {
-                t.b, pullToRadius(midPoint(t.b, t.a), r),
-                pullToRadius(midPoint(t.b, t.c), r) };
-            Triangle t4 = {
-                pullToRadius(midPoint(t.c, t.a), r),
-                pullToRadius(midPoint(t.b, t.a), r),
-                pullToRadius(midPoint(t.b, t.c), r) };
-
-            subTrianglesRad(t1, depth-1, r, triangles);
-            subTrianglesRad(t2, depth-1, r, triangles);
-            subTrianglesRad(t3, depth-1, r, triangles);
-            subTrianglesRad(t4, depth-1, r, triangles);
+            /* triangle(a, b, c); */
+            Triangle newT = {t.a, t.b, t.c};
+            triangles->push_back(newT);
         }
     }
 };
 
 
 
+Point3D v[4] =
+{
+    {0.0, 0.0, 1.0, 1.0},
+    {0.0, 0.942809, -0.333333, 1.0},
+    {-0.816497, -0.471405, -0.333333, 1.0},
+    {0.816497, -0.471405, -0.333333, 1.0}
+};
+
+
+
+/* void tetra(int n) */
+/* { */
+/*     divide_triangle(v[0], v[1], v[2], n); */
+/*     divide_triangle(v[3], v[2], v[1], n); */
+/*     divide_triangle(v[0], v[3], v[1], n); */
+/*     divide_triangle(v[0], v[2], v[3], n); */
+/*     /1* divide_triangle(v[0], v[1], v[2], n); *1/ */
+/*     /1* divide_triangle(v[3], v[2], v[1], n); *1/ */
+/*     /1* divide_triangle(v[0], v[3], v[1], n); *1/ */
+/*     /1* divide_triangle(v[0], v[2], v[3], n); *1/ */
+/* } */
 
 struct Octahedron
 {
@@ -376,6 +466,18 @@ struct Octahedron
             sphericalToCartesian({radius, 90, 180})
         };
     }
+
+    void drawWithColor(Color c)
+    {
+        /* Triangle::drawTriangles(triangles); */
+        vector<Triangle> triangles;
+        for (int i = 0; i < 8; i++)
+        {
+            triangles.push_back(ts[i]);
+        }
+        Triangle::drawTrianglesWithColor(triangles, c);
+    }
+
 };
 
 struct Sphere
@@ -399,44 +501,84 @@ struct Sphere
 
     Sphere(float radius)
     {
-        // Initial Octahedron
-        Octahedron octahedron(radius);
+        Triangle t1 = {v[0], v[1], v[2]};
+        Triangle t2 = {v[3], v[2], v[1]};
+        Triangle t3 = {v[0], v[3], v[1]};
+        Triangle t4 = {v[0], v[2], v[3]};
+        Triangle::subTrianglesRad(t1, defaultDepth, radius, &triangles);
+        Triangle::subTrianglesRad(t2, defaultDepth, radius, &triangles);
+        Triangle::subTrianglesRad(t3, defaultDepth, radius, &triangles);
+        Triangle::subTrianglesRad(t4, defaultDepth, radius, &triangles);
 
-        // Subdiveide each triangle
-        for (int i = 0; i < 8; i++)
-        {
-            Triangle::subTrianglesRad(octahedron.ts[i], defaultDepth, radius,
-                    &triangles);
-        }
+        /* // Initial Octahedron */
+        /* Octahedron octahedron(radius); */
+
+        /* // Subdiveide each triangle */
+        /* for (int i = 0; i < 8; i++) */
+        /* { */
+        /*     Triangle::subTrianglesRad(octahedron.ts[i], defaultDepth, radius, */
+        /*             &triangles); */
+        /* } */
     }
 };
 
 struct AstronomicalObject
 {
-    float radius;
-    float rotationPeriod;
-    float orbitalCenter;
-    float orbitalPeriod;
-    float orbitalRadius;
-    float rotationPosition;
-    float orbitalPosition;
+    float radius = 0;
+    float rotationPeriod = 0;
+    float orbitalCenter = 0;
+    float orbitalPeriod = 0;
+    float orbitalRadius = 0;
+    float rotationPosition = 0;
+    float orbitalPosition = 0;
     Color color;
 
+    const float rotationalStep = 0.1;
+
     Sphere sphere = Sphere(radius);
+    /* Octahedron oct = Octahedron(radius); */
+
+    void rotate()
+    {
+        if (rotationPosition < 360)
+        {
+            rotationPosition += rotationalStep;
+        }
+        else
+        {
+            rotationPosition = 0;
+        }
+    }
 
     void draw()
     {
         sphere.drawWithColor(color);
+        /* oct.drawWithColor(color); */
     }
 };
 
 Color colorSun = { 1, 1, 0.5 };
 Color colorMercury = { 0.5, 0.5, 0.5 };
+Color colorVenus = { 0.5, 0.5, 0.3 };
+Color colorEarth = { 0.2, 0.5, 1 };
+Color colorMars = { 1, 0.5, 0.5 };
+Color colorJupiter = { 0.5, 0.3, 0.1 };
+Color colorSaturn = { 0.6, 0.5, 0.3 };
+Color colorUranus = { 0.1, 0.8, 0.9 };
+Color colorNeptune = { 0.2, 0.3, 0.6 };
 
-AstronomicalObject sun = {0.2, 0, 0, 0, 0, 0, 0, colorSun};
-AstronomicalObject mercury = {0.1, 0, 0, 0, 0.3, 0, 0, colorMercury};
+AstronomicalObject sun = {0.8, 0, 0, 0, 0, 0, 0, colorSun};
+AstronomicalObject mercury = {0.05, 0, 0, 0, 0.3, 0, 0, colorMercury};
+AstronomicalObject venus = {0.08, 0, 0, 0, 0.5, 0, 0, colorVenus};
+AstronomicalObject earth = {0.08, 0, 0, 0, 0.7, 0, 0, colorEarth};
+AstronomicalObject mars = {0.07, 0, 0, 0, 0.9, 0, 0, colorMars};
+AstronomicalObject jupiter = {0.15, 0, 0, 0, 1.1, 0, 0, colorJupiter};
+AstronomicalObject saturn = {0.12, 0, 0, 0, 1.4, 0, 0, colorSaturn};
+AstronomicalObject uranus = {0.09, 0, 0, 0, 1.6, 0, 0, colorUranus};
+AstronomicalObject neptune = {0.09, 0, 0, 0, 1.8, 0, 0, colorNeptune};
 
-AstronomicalObject astronomicalObjects[nAstronomicalObjects] = {sun, mercury};
+AstronomicalObject astronomicalObjects[nAstronomicalObjects]
+    = {sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune};
 
 void init(void)
 {
@@ -495,14 +637,16 @@ void display(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClear(GL_COLOR_BUFFER_BIT);
 
-    for (int i = 0; i < nAstronomicalObjects; i++)
+    /* for (int i = 0; i < nAstronomicalObjects; i++) */
+    for (int i = 0; i < 1; i++)
     {
         auto object = astronomicalObjects[i];
         glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
                 Matrix()
-                * Matrix::Rz(object.rotationPosition)
-                * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)
-                * Matrix::scaleMatrixU(object.radius));
+                * Matrix::Ry(object.rotationPosition));
+                /* * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)); */
+                /* * Matrix::scaleMatrix(0.5, 0.5, 0.5)); */
+                /* * Matrix::scaleMatrixU(object.radius)); */
 
         glDrawArrays(GL_TRIANGLES, i*verticesPerSphere, verticesPerSphere);
     }
@@ -513,11 +657,26 @@ void display(void)
     glFlush();
 }
 
+void idle()
+{
+    cout << "rotation sun: " << astronomicalObjects[0].rotationPosition << endl;
+    cout << "sun fucking radius: " << astronomicalObjects[0].radius << endl;
+    astronomicalObjects[0].rotate();
+    glutPostRedisplay();
+}
+
 int main(int argc, char **argv)
 {
 
     sun.draw();
     mercury.draw();
+    venus.draw();
+    earth.draw();
+    mars.draw();
+    jupiter.draw();
+    saturn.draw();
+    uranus.draw();
+    neptune.draw();
     /* Sphere s(0.2); */
     /* s.draw(); */
 
@@ -528,13 +687,14 @@ int main(int argc, char **argv)
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
     /* glutInitDisplayMode(GLUT_RGBA); */
-    glutInitWindowSize(812, 812);
-    glutCreateWindow("Gasket 3D");
+    glutInitWindowSize(1000, 1000);
+    glutCreateWindow("Sistema Solar");
     glewInit();
     init();
 
     // Configuración del callback y loop principal
     glutDisplayFunc(display);
+    glutIdleFunc(idle);
     glutMainLoop();
 
 }
