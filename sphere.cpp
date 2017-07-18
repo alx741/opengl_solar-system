@@ -45,7 +45,7 @@ struct Point3D
 
     static Point3D zero()
     {
-        return {0, 0, 0, 1};
+        return {0, 0, 0, 0};
     }
 
     GLfloat &operator [](int i)
@@ -63,6 +63,18 @@ struct PointSpherical
 {
     GLfloat r, a, p;
 };
+
+typedef float Angle;
+
+Angle degToRad(Angle a)
+{
+    return a * (M_PI / 180.0);
+}
+
+Angle radToDeg(Angle a)
+{
+    return a * (180.0 / M_PI);
+}
 
 struct Matrix
 {
@@ -83,6 +95,65 @@ struct Matrix
         matrix[1] = v2;
         matrix[2] = v3;
         matrix[3] = v3;
+    }
+
+    static Matrix Rx(Angle a)
+    {
+        Matrix m;
+        Angle angle = degToRad(a);
+        m[0][0] = 1;
+        m[3][3] = 1;
+        m[1][1] = cos(angle);
+        m[2][2] = cos(angle);
+        m[2][1] = -sin(angle);
+        m[1][2] = sin(angle);
+        return m;
+    }
+
+    static Matrix Ry(Angle a)
+    {
+        Matrix m;
+        Angle angle = degToRad(a);
+        m[1][1] = 1;
+        m[3][3] = 1;
+        m[0][0] = cos(angle);
+        m[2][2] = cos(angle);
+        m[0][2] = -sin(angle);
+        m[2][0] = sin(angle);
+        return m;
+    }
+
+    static Matrix Rz(Angle a)
+    {
+        Matrix m;
+        Angle angle = degToRad(a);
+        m[3][3] = 1;
+        m[2][2] = 1;
+        m[0][0] = cos(angle);
+        m[1][1] = cos(angle);
+        m[1][0] = -sin(angle);
+        m[0][1] = sin(angle);
+        return m;
+    }
+
+    static Matrix scaleMatrix(float b1, float b2, float b3)
+    {
+        Matrix m;
+        m[0][0] = b1;
+        m[1][1] = b2;
+        m[2][2] = b3;
+        m[3][3] = 1;
+        return m;
+    }
+
+    static Matrix shiftMatrix(float x, float y, float z)
+    {
+        Matrix m;
+        m[0][0] = m[1][1] = m[2][2] = m[3][3] = 1;
+        m[0][3] = x;
+        m[1][3] = y;
+        m[2][3] = z;
+        return m;
     }
 
     Matrix operator * (Matrix m)
@@ -112,6 +183,8 @@ struct Matrix
         return static_cast<GLfloat *>(&matrix[0].x);
     }
 };
+
+/* static const Matrix zeroMatrix = Matrix({0, 0, 0, 0}, {0, 0, 0, 0}  {0, 0, 0, 0}, {0, 0, 0, 0}); */
 
 const int trianglesPerSphere = 8192;
 const int verticesPerTriangle = 3;
@@ -239,80 +312,6 @@ struct Triangle
 
 
 
-typedef float Angle;
-
-Angle degToRad(Angle a)
-{
-    return a * (M_PI / 180.0);
-}
-
-Angle radToDeg(Angle a)
-{
-    return a * (180.0 / M_PI);
-}
-
-
-Matrix zeroMatrix = Matrix();
-
-Matrix Rx(Angle a)
-{
-    Matrix m = zeroMatrix;
-    Angle angle = degToRad(a);
-    m[0][0] = 1;
-    m[3][3] = 1;
-    m[1][1] = cos(angle);
-    m[2][2] = cos(angle);
-    m[2][1] = -sin(angle);
-    m[1][2] = sin(angle);
-    return m;
-}
-
-Matrix Ry(Angle a)
-{
-    Matrix m = zeroMatrix;
-    Angle angle = degToRad(a);
-    m[1][1] = 1;
-    m[3][3] = 1;
-    m[0][0] = cos(angle);
-    m[2][2] = cos(angle);
-    m[0][2] = -sin(angle);
-    m[2][0] = sin(angle);
-    return m;
-}
-
-Matrix Rz(Angle a)
-{
-    Matrix m = zeroMatrix;
-    Angle angle = degToRad(a);
-    m[3][3] = 1;
-    m[2][2] = 1;
-    m[0][0] = cos(angle);
-    m[1][1] = cos(angle);
-    m[1][0] = -sin(angle);
-    m[0][1] = sin(angle);
-    return m;
-}
-
-/* Otras operaciones matriciales */
-Matrix scaleMatrix(float b1, float b2, float b3)
-{
-    Matrix c;
-    c[0][0] = b1;
-    c[1][1] = b2;
-    c[2][2] = b3;
-    c[3][3] = 1;
-    return c;
-}
-
-Matrix shiftMatrix(float x, float y, float z)
-{
-    Matrix c;
-    c[0][0] = c[1][1] = c[2][2] = c[3][3] = 1;
-    c[0][3] = x;
-    c[1][3] = y;
-    c[2][3] = z;
-    return c;
-}
 
 struct Octahedron
 {
@@ -371,15 +370,6 @@ struct Octahedron
             sphericalToCartesian({radius, 90, 180})
         };
     }
-
-    void draw()
-    {
-        for (int i=0; i<8; i++)
-        {
-            ts[i].draw();
-        }
-    }
-
 };
 
 struct Sphere
@@ -449,7 +439,10 @@ void init(void)
 
     // Tranformaciones
     GLint transMatrix = glGetUniformLocation(program, "trans");
-    glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix() * Rx(40) * Ry(20) * Rz(20) * scaleMatrix(0.5, 0.5, 0.5) * shiftMatrix(1.5, 0, 0));
+    glUniformMatrix4fv(transMatrix, 1, GL_FALSE,
+            Matrix() * Matrix::Rx(40) * Matrix::Ry(20) * Matrix::Rz(20)
+            * Matrix::scaleMatrix(0.5, 0.5, 0.5)
+            * Matrix::shiftMatrix(1.5, 0, 0));
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
