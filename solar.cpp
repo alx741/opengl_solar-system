@@ -1,9 +1,6 @@
 #include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/freeglut.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <cmath>
 #include <vector>
@@ -266,7 +263,6 @@ struct Triangle
 {
     Point3D a,b,c;
 
-
     // Draw with default greenish tones
     void draw()
     {
@@ -340,7 +336,6 @@ struct Triangle
         }
     }
 };
-
 
 
 struct Octahedron
@@ -557,8 +552,6 @@ void init(void)
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
-    // Configurar color de fondo
-    /* glClearColor(0.5, 0.6, 1.0, 1.0); */
 }
 
 void display(void)
@@ -589,7 +582,7 @@ void display(void)
                 * Matrix::shiftMatrix(earth.orbitalRadius + 20.5, 0, 0)
                 * Matrix::Rz(object.orbitalPosition)
                 * Matrix::shiftMatrix(object.orbitalRadius, 0, 0)
-                * Matrix::Rz(object.orbitalPosition)
+                * Matrix::Rz(object.rotationPosition)
                 ;
         }
         glUniformMatrix4fv(transMatrix, 1, GL_TRUE, trans);
@@ -625,7 +618,6 @@ int main(int argc, char **argv)
     // Inicialización de la ventana
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH);
-    /* glutInitDisplayMode(GLUT_RGBA); */
     glutInitWindowSize(1000, 1000);
     glutCreateWindow("Sistema Solar");
     glewInit();
