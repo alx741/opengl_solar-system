@@ -93,7 +93,7 @@ Angle radToDeg(Angle a)
 
 struct Matrix
 {
-    Point3D matrix[4] = {0, 0, 0, 0};
+    Point3D matrix[4];
 
     // Identity Matrix
     Matrix()
