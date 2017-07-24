@@ -223,6 +223,7 @@ Color colors[nVertices];
 Point3D normals[nVertices];
 int INDEX = 0;
 GLint transMatrix;
+GLint lightpos;
 
 
 // Encontrar el punto medio entre dos puntos a y b
@@ -269,25 +270,31 @@ struct Triangle
     {
         vertex[INDEX] = a;
         colors[INDEX] = {0.0, 0.6, 0.0};
+        normals[INDEX] = {a.x, a.y, a.z};
         INDEX++;
         vertex[INDEX] = b;
         colors[INDEX] = {0.0, 1.0, 0.0};
+        normals[INDEX] = {b.x, b.y, b.z};
         INDEX++;
         vertex[INDEX] = c;
         colors[INDEX] = {0.0, 1.0, 0.0};
+        normals[INDEX] = {c.x, c.y, c.z};
         INDEX++;
     }
 
     void drawWithColor(Color color)
     {
         vertex[INDEX] = a;
-        colors[INDEX] = color.darken();
+        colors[INDEX] = color;
+        normals[INDEX] = {a.x, a.y, a.z};
         INDEX++;
         vertex[INDEX] = b;
         colors[INDEX] = color;
+        normals[INDEX] = {a.x, b.y, b.z};
         INDEX++;
         vertex[INDEX] = c;
-        colors[INDEX] = color.darkenMore();
+        colors[INDEX] = color;
+        normals[INDEX] = {c.x, c.y, c.z};
         INDEX++;
     }
 
@@ -548,14 +555,16 @@ void init(void)
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
 
     // Normal
-    GLuint vnormal = glGetAttribLocation(program, "vnormal");
-    glEnableVertexAttribArray(vnormal);
-    glVertexAttribPointer(vnormal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) (sizeof(vertex) + sizeof(colors)));
+    GLuint normal = glGetAttribLocation(program, "normal");
+    glEnableVertexAttribArray(normal);
+    glVertexAttribPointer(normal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) (sizeof(vertex) + sizeof(colors)));
 
     // Tranformaciones
     transMatrix = glGetUniformLocation(program, "trans");
+    lightpos = glGetUniformLocation(program, "lightpos");
 
     glUniformMatrix4fv(transMatrix, 1, GL_FALSE, Matrix());
+    glUniformMatrix4fv(lightpos, 1, GL_FALSE, 0);
 
     // Activar algorimo Z
     glEnable(GL_DEPTH_TEST);
