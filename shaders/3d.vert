@@ -2,6 +2,7 @@
 
 attribute vec4 position;
 attribute vec3 vcolor;
+attribute vec3 normal;
 out vec4 color;
 
 uniform mat4 trans;

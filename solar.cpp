@@ -220,6 +220,7 @@ const int verticesPerSphere = trianglesPerSphere * verticesPerTriangle;
 const int nVertices = trianglesPerSphere * verticesPerTriangle * nAstronomicalObjects;
 Point3D vertex[nVertices];
 Color colors[nVertices];
+Point3D normals[nVertices];
 int INDEX = 0;
 GLint transMatrix;
 
@@ -518,9 +519,10 @@ void init(void)
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
 
     // Buffer de datos contiene los puntos y colores
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) + sizeof(colors), NULL, GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertex) + sizeof(colors) + sizeof(normals), NULL, GL_STATIC_DRAW);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex), vertex);
     glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertex), sizeof(colors), colors);
+    glBufferSubData(GL_ARRAY_BUFFER, sizeof(vertex) + sizeof(colors), sizeof(normals), normals);
 
     // Ubicación de los shaders 3d
     ShaderInfo  shaders[] =
@@ -535,15 +537,20 @@ void init(void)
     GLuint program = loadShaders(shaders);
     glUseProgram(program);
 
-    // Atributos de posición
+    // Position
     GLuint position = glGetAttribLocation(program, "position");
     glEnableVertexAttribArray(position);
     glVertexAttribPointer(position, 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-    // Atributos de color
+    // Color
     GLuint vcolor = glGetAttribLocation(program, "vcolor");
     glEnableVertexAttribArray(vcolor);
     glVertexAttribPointer(vcolor, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) sizeof(vertex));
+
+    // Normal
+    GLuint vnormal = glGetAttribLocation(program, "vnormal");
+    glEnableVertexAttribArray(vnormal);
+    glVertexAttribPointer(vnormal, 3, GL_FLOAT, GL_FALSE, 0, (GLvoid*) (sizeof(vertex) + sizeof(colors)));
 
     // Tranformaciones
     transMatrix = glGetUniformLocation(program, "trans");
